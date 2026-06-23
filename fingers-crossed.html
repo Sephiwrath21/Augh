@@ -34,48 +34,49 @@
     line-height: 1;
     cursor: pointer;
     display: inline-block;
-    /* swing pivots from the top, like a hanging pendulum */
-    transform-origin: 50% 0%;
+    /* 3D perspective so the nod tilts toward/away from the viewer */
+    perspective: 600px;
+    transform-origin: 50% 50%;
     transition: transform 0.15s ease;
   }
   .emoji:hover { transform: scale(1.05); }
   .emoji:active { transform: scale(0.96); }
 
-  .emoji.swing {
-    animation: swing 1s ease-in-out;
+  .emoji.nod {
+    animation: nod 1s ease-in-out;
   }
-  /* front-and-back rocking that eases out */
-  @keyframes swing {
-    0%   { transform: rotate(0deg); }
-    15%  { transform: rotate(28deg); }
-    35%  { transform: rotate(-24deg); }
-    55%  { transform: rotate(16deg); }
-    72%  { transform: rotate(-10deg); }
-    87%  { transform: rotate(5deg); }
-    100% { transform: rotate(0deg); }
+  /* nodding "yes" — tips forward and back, easing out */
+  @keyframes nod {
+    0%   { transform: rotateX(0deg); }
+    15%  { transform: rotateX(35deg); }
+    35%  { transform: rotateX(-28deg); }
+    55%  { transform: rotateX(20deg); }
+    72%  { transform: rotateX(-12deg); }
+    87%  { transform: rotateX(6deg); }
+    100% { transform: rotateX(0deg); }
   }
 </style>
 </head>
 <body>
   <h1>Fingers Crossed</h1>
   <span class="emoji" id="fc" role="button" tabindex="0" aria-label="Fingers crossed emoji">🤞</span>
-  <p>Click the emoji to make it swing.</p>
+  <p>Click the emoji to make it nod.</p>
 
 <script>
   const fc = document.getElementById('fc');
 
-  function swing() {
+  function nod() {
     // restart the animation even on rapid repeat clicks
-    fc.classList.remove('swing');
+    fc.classList.remove('nod');
     void fc.offsetWidth; // force reflow
-    fc.classList.add('swing');
+    fc.classList.add('nod');
   }
 
-  fc.addEventListener('click', swing);
+  fc.addEventListener('click', nod);
   fc.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swing(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nod(); }
   });
-  fc.addEventListener('animationend', () => fc.classList.remove('swing'));
+  fc.addEventListener('animationend', () => fc.classList.remove('nod'));
 </script>
 </body>
 </html>
