@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fingers Crossed 🤞</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at 50% 20%, #2a2350 0%, #0f0e17 65%);
+    color: #fffffe;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+    user-select: none;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    background: linear-gradient(90deg, #ff8906, #e53170);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p { color: #a7a9be; }
+
+  .emoji {
+    font-size: clamp(6rem, 28vw, 14rem);
+    line-height: 1;
+    cursor: pointer;
+    display: inline-block;
+    /* swing pivots from the top, like a hanging pendulum */
+    transform-origin: 50% 0%;
+    transition: transform 0.15s ease;
+  }
+  .emoji:hover { transform: scale(1.05); }
+  .emoji:active { transform: scale(0.96); }
+
+  .emoji.swing {
+    animation: swing 1s ease-in-out;
+  }
+  /* front-and-back rocking that eases out */
+  @keyframes swing {
+    0%   { transform: rotate(0deg); }
+    15%  { transform: rotate(28deg); }
+    35%  { transform: rotate(-24deg); }
+    55%  { transform: rotate(16deg); }
+    72%  { transform: rotate(-10deg); }
+    87%  { transform: rotate(5deg); }
+    100% { transform: rotate(0deg); }
+  }
+</style>
+</head>
+<body>
+  <h1>Fingers Crossed</h1>
+  <span class="emoji" id="fc" role="button" tabindex="0" aria-label="Fingers crossed emoji">🤞</span>
+  <p>Click the emoji to make it swing.</p>
+
+<script>
+  const fc = document.getElementById('fc');
+
+  function swing() {
+    // restart the animation even on rapid repeat clicks
+    fc.classList.remove('swing');
+    void fc.offsetWidth; // force reflow
+    fc.classList.add('swing');
+  }
+
+  fc.addEventListener('click', swing);
+  fc.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); swing(); }
+  });
+  fc.addEventListener('animationend', () => fc.classList.remove('swing'));
+</script>
+</body>
+</html>
