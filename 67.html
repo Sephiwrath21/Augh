@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6 7 — Augh!</title>
+<style>
+  :root {
+    --bg: #0f0e17;
+    --fg: #fffffe;
+    --accent: #ff8906;
+    --accent2: #e53170;
+    --muted: #a7a9be;
+    --card: #1a1925;
+    --line: #2a2839;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at 20% 15%, #241f3a 0%, var(--bg) 60%);
+    color: var(--fg);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem 4rem;
+    overflow-x: hidden;
+  }
+  .back-link {
+    position: fixed; top: 1rem; left: 1rem; z-index: 20;
+    display: inline-flex; align-items: center; gap: .4rem;
+    text-decoration: none; color: var(--fg);
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: .5rem .9rem; font-size: .9rem;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .back-link:hover { border-color: var(--accent); transform: translateX(-3px); }
+  h1 {
+    font-size: clamp(4rem, 22vw, 11rem);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    margin-top: 4vh;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    user-select: none;
+  }
+  .tagline { color: var(--muted); font-size: 1.05rem; margin: 1rem 0 2.5rem; max-width: 32ch; }
+  .emotes {
+    display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+    width: min(900px, 100%);
+  }
+  .emote {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 1.5rem 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .emote:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 12px 30px -12px var(--accent2); }
+  .emote .face { font-size: 3.2rem; line-height: 1; }
+  .emote h3 { font-size: 1.05rem; }
+  .emote iframe { border-radius: 12px; }
+  .emote .cap { color: var(--muted); font-size: 0.82rem; max-width: 22ch; }
+  .hint { margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem; }
+  footer { margin-top: auto; padding-top: 3rem; color: var(--muted); font-size: 0.8rem; }
+  footer code { background: var(--card); padding: 2px 8px; border-radius: 6px; color: var(--accent); }
+  .floater {
+    position: fixed; pointer-events: none; z-index: 40; font-weight: 800;
+    font-size: 2.5rem; user-select: none;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: floatUp 1.1s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(0.6) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(-160px) scale(1.3) rotate(var(--spin, 12deg)); }
+  }
+</style>
+</head>
+<body>
+  <a class="back-link" href="index.html">← Back to Augh</a>
+
+  <h1>6 7</h1>
+  <p class="tagline">The only emote that matters. Tap a button, get your daily dose of <b>doot doot</b>. 🔊</p>
+
+  <div class="emotes">
+    <div class="emote">
+      <span class="face">🙌</span>
+      <h3>6 7 (doot doot)</h3>
+      <iframe width="110" height="200" src="https://www.myinstants.com/instant/doot-doot-6-7-62747/embed/" frameborder="0" scrolling="no" title="doot doot 6 7 sound"></iframe>
+      <span class="cap">The classic. Click and vibe.</span>
+    </div>
+    <div class="emote">
+      <span class="face">🫳📈</span>
+      <h3>6 7 (full)</h3>
+      <iframe width="110" height="200" src="https://www.myinstants.com/instant/6-7-full-38791/embed/" frameborder="0" scrolling="no" title="6 7 full sound"></iframe>
+      <span class="cap">The extended cut, for the real ones.</span>
+    </div>
+  </div>
+
+  <p class="hint">Tip: click anywhere on the page for a little extra 6 7. 👇</p>
+
+  <footer>Built for fun · served from the <code>Augh</code> repo</footer>
+
+<script>
+  // Sprinkle a floating "6 7" wherever you click (just for fun — no sound, the buttons handle that).
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('iframe') || e.target.closest('.back-link')) return;
+    const f = document.createElement('div');
+    f.className = 'floater';
+    f.textContent = '6 7';
+    f.style.left = (e.clientX - 24) + 'px';
+    f.style.top = (e.clientY - 24) + 'px';
+    f.style.setProperty('--spin', (Math.random() * 60 - 30) + 'deg');
+    document.body.append(f);
+    setTimeout(() => f.remove(), 1100);
+  });
+</script>
+</body>
+</html>
