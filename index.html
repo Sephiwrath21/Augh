@@ -104,6 +104,41 @@
   footer code { background: var(--card); padding: 2px 8px; border-radius: 6px; color: var(--accent); }
   .pulse { animation: pulse 0.4s ease; }
   @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+
+  /* wizard */
+  #wizard {
+    position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 60;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    cursor: pointer; user-select: none;
+  }
+  #wizard .sprite {
+    font-size: 3.2rem; line-height: 1;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5));
+    animation: bob 3s ease-in-out infinite;
+    transition: transform 0.15s ease;
+  }
+  #wizard:hover .sprite { transform: scale(1.08) rotate(-4deg); }
+  #wizard.casting .sprite { animation: cast 0.5s ease; }
+  @keyframes bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-8px) } }
+  @keyframes cast { 0%{transform:rotate(0)} 25%{transform:rotate(-14deg) scale(1.12)} 60%{transform:rotate(10deg) scale(1.12)} 100%{transform:rotate(0)} }
+  #wizard .label {
+    font-size: 0.72rem; color: var(--muted); background: var(--card);
+    border: 1px solid #2a2839; padding: 2px 8px; border-radius: 999px;
+  }
+  .spell-bubble {
+    position: fixed; bottom: 6rem; right: 1.25rem; z-index: 60;
+    max-width: min(260px, 70vw); background: var(--card);
+    border: 1px solid var(--accent); color: var(--fg);
+    padding: 0.7rem 0.95rem; border-radius: 14px; font-size: 0.9rem; line-height: 1.35;
+    box-shadow: 0 12px 30px -12px var(--accent2);
+    opacity: 0; transform: translateY(8px) scale(0.96); transform-origin: bottom right;
+    transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none;
+  }
+  .spell-bubble.show { opacity: 1; transform: translateY(0) scale(1); }
+  .spell-bubble::after {
+    content: ''; position: absolute; bottom: -8px; right: 28px;
+    border: 8px solid transparent; border-top-color: var(--accent); border-bottom: 0;
+  }
 </style>
 </head>
 <body>
@@ -165,6 +200,12 @@
   <footer>
     Built for fun · served from the <code>Augh</code> repo
   </footer>
+
+  <div class="spell-bubble" id="spell"></div>
+  <div id="wizard" title="Click for a spell">
+    <span class="sprite">🧙‍♂️</span>
+    <span class="label">Tap me</span>
+  </div>
 
 <script>
 const stage = document.getElementById('stage');
@@ -277,6 +318,67 @@ document.querySelectorAll('.card').forEach(card=>{
 });
 
 document.getElementById('title').addEventListener('click', ()=> burst(40));
+
+/* ---- the wizard ---- */
+const wizard = document.getElementById('wizard');
+const spellBubble = document.getElementById('spell');
+const spells = [
+  "✨ Abracadabra! Your code now compiles. Probably.",
+  "🔮 I foresee... snacks in your near future.",
+  "🪄 Poof! That bug is now someone else's problem.",
+  "🌟 Blessed be thy git history, may it never need a rebase.",
+  "🧪 A potion of +10 motivation has been brewed.",
+  "🐸 You are now 3% more magical. Trust me, I counted.",
+  "💫 The spirits say: ship it on a Friday. Live dangerously.",
+  "📜 Ancient scroll reads: 'have you tried turning it off and on?'",
+  "🌙 By moonlight I grant you one (1) free vibe.",
+  "🔥 Spell cast! Nothing happened. Magic is mysterious like that.",
+];
+
+function sparkle(x, y, n = 42){
+  for(let i = 0; i < n; i++){
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 2 + Math.random() * 7;
+    pieces.push({
+      x, y,
+      vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3,
+      g: 0.18 + Math.random() * 0.12, size: 4 + Math.random() * 6,
+      rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4,
+      color: `hsl(${40 + Math.random() * 20}, 95%, ${60 + Math.random() * 18}%)`, life: 1
+    });
+  }
+}
+
+function playChime(){
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [880, 1318.5].forEach((freq, i) => {       // a sparkly two-note bell (A5 + E6)
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      const t = now + i * 0.09;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + 0.55);
+    });
+  } catch(e) { /* audio not available — fail silently */ }
+}
+
+let spellTimer = null;
+wizard.addEventListener('click', () => {
+  wizard.classList.remove('casting'); void wizard.offsetWidth; wizard.classList.add('casting');
+  const r = wizard.getBoundingClientRect();
+  sparkle(r.left + r.width / 2, r.top + r.height / 3);
+  playChime();
+  spellBubble.textContent = spells[Math.floor(Math.random() * spells.length)];
+  spellBubble.classList.add('show');
+  clearTimeout(spellTimer);
+  spellTimer = setTimeout(() => spellBubble.classList.remove('show'), 4200);
+});
 </script>
 </body>
 </html>
