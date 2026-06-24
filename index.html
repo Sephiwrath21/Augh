@@ -215,41 +215,65 @@ function resize(){ cvs.width = innerWidth; cvs.height = innerHeight; }
 resize(); addEventListener('resize', resize);
 
 let audioCtx;
-function playWhistle(){
+function playCelebration(){
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended') audioCtx.resume();
     const now = audioCtx.currentTime;
 
-    // party-horn body: a reedy tone that swoops up
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(330, now);
-    osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
-    osc.frequency.exponentialRampToValueAtTime(740, now + 0.42);
+    // brassy "ta-da!" voice: sawtooth through a lowpass for a warm fanfare tone
+    const voice = (freq, t, dur, peak) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filt = audioCtx.createBiquadFilter();
+      osc.type = 'sawtooth'; osc.frequency.value = freq;
+      filt.type = 'lowpass'; filt.frequency.value = 3200;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+      gain.gain.setValueAtTime(peak, t + dur * 0.6);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(filt).connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + dur + 0.05);
+    };
 
-    // a little vibrato/squeak on top
-    const vib = audioCtx.createOscillator();
-    vib.frequency.value = 18;
-    const vibGain = audioCtx.createGain();
-    vibGain.gain.value = 40;
-    vib.connect(vibGain).connect(osc.frequency);
+    // pickup notes then a held C-major chord:  ta -  ta - DAAA!
+    voice(523.25, now,        0.12, 0.16);                 // C5
+    voice(659.25, now + 0.12, 0.12, 0.16);                 // E5
+    [523.25, 659.25, 783.99, 1046.5].forEach(f =>          // C5 E5 G5 C6 chord
+      voice(f, now + 0.26, 0.9, 0.14));
 
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.04);
-    gain.gain.setValueAtTime(0.25, now + 0.4);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+    // bright sparkle on top of the chord
+    for (let i = 0; i < 6; i++){
+      const t = now + 0.26 + Math.random() * 0.5;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 1600 + Math.random() * 1800;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.06, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + 0.35);
+    }
 
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(now); vib.start(now);
-    osc.stop(now + 0.56); vib.stop(now + 0.56);
+    // a quick noise "cheer" swell underneath
+    const len = audioCtx.sampleRate * 0.6;
+    const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1);
+    const noise = audioCtx.createBufferSource(); noise.buffer = buf;
+    const nFilt = audioCtx.createBiquadFilter(); nFilt.type = 'bandpass'; nFilt.frequency.value = 5000; nFilt.Q.value = 0.7;
+    const nGain = audioCtx.createGain();
+    nGain.gain.setValueAtTime(0.0001, now + 0.26);
+    nGain.gain.exponentialRampToValueAtTime(0.09, now + 0.34);
+    nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
+    noise.connect(nFilt).connect(nGain).connect(audioCtx.destination);
+    noise.start(now + 0.26); noise.stop(now + 0.9);
   } catch(e) { /* audio not available — fail silently */ }
 }
 
 let pieces = [];
 function burst(n = 120){
-  playWhistle();
+  playCelebration();
   for(let i=0;i<n;i++){
     pieces.push({
       x: innerWidth/2, y: innerHeight/3,
