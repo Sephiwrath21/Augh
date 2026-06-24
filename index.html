@@ -354,17 +354,38 @@ function playChime(){
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if(audioCtx.state === 'suspended') audioCtx.resume();
     const now = audioCtx.currentTime;
-    [880, 1318.5].forEach((freq, i) => {       // a sparkly two-note bell (A5 + E6)
+
+    // gentle reverb-ish master with a soft lowpass so it shimmers, not pierces
+    const master = audioCtx.createGain();
+    master.gain.value = 0.9;
+    const tone = audioCtx.createBiquadFilter();
+    tone.type = 'lowpass'; tone.frequency.value = 6000;
+    master.connect(tone).connect(audioCtx.destination);
+
+    const bell = (freq, t, dur, peak, type = 'sine') => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sine'; osc.frequency.value = freq;
-      const t = now + i * 0.09;
+      osc.type = type; osc.frequency.value = freq;
       gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t); osc.stop(t + 0.55);
+      gain.gain.exponentialRampToValueAtTime(peak, t + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain).connect(master);
+      osc.start(t); osc.stop(t + dur + 0.05);
+    };
+
+    // ascending magical arpeggio (C major pentatonic: C5 E5 G5 A5 C6 E6)
+    const arp = [523.25, 659.25, 783.99, 880, 1046.5, 1318.5];
+    arp.forEach((f, i) => {
+      const t = now + i * 0.065;
+      bell(f, t, 0.9 - i * 0.05, 0.2);          // bell body
+      bell(f * 2, t, 0.5, 0.05, 'triangle');    // shimmer an octave up
     });
+
+    // a sprinkle of high random twinkles for that "fairy dust" tail
+    for (let i = 0; i < 5; i++){
+      const t = now + 0.18 + Math.random() * 0.5;
+      bell(1800 + Math.random() * 1600, t, 0.25 + Math.random() * 0.2, 0.06);
+    }
   } catch(e) { /* audio not available — fail silently */ }
 }
 
