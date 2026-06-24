@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fingers Crossed 🤞 — Augh!</title>
+<style>
+  :root {
+    --bg: #0a0118;
+    --fg: #ffffff;
+    --accent: #ff39a8;
+    --accent2: #00f0ff;
+    --lime: #b2ff3a;
+    --muted: #bdd9ff;
+    --card: #190a33;
+    --line: #3a2a5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Trebuchet MS", Verdana, Tahoma, sans-serif;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(0,240,255,.28), transparent 55%),
+      radial-gradient(circle at 12% 18%, rgba(255,57,168,.28), transparent 50%),
+      linear-gradient(#1a0b3a, var(--bg));
+    background-attachment: fixed;
+    color: var(--fg);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+    padding: 2.8rem 1rem 4rem;
+    user-select: none;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 75% 22%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 40% 70%, #d6f3ff, transparent),
+      radial-gradient(1px 1px at 88% 62%, #ffd6f5, transparent),
+      radial-gradient(2px 2px at 62% 88%, #fff, transparent);
+    animation: twinkle 4s ease-in-out infinite alternate;
+  }
+  body::after {
+    content: ''; position: fixed; left: -50%; right: -50%; bottom: -12%; height: 50vh; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,240,255,.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,57,168,.4) 1px, transparent 1px);
+    background-size: 42px 42px;
+    transform: perspective(320px) rotateX(62deg); transform-origin: bottom center;
+    -webkit-mask-image: linear-gradient(transparent, #000 55%); mask-image: linear-gradient(transparent, #000 55%);
+  }
+  @keyframes twinkle { from { opacity: .45 } to { opacity: .9 } }
+  .marquee {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 55; overflow: hidden; white-space: nowrap;
+    background: linear-gradient(90deg, var(--accent), var(--lime), var(--accent2));
+    color: #15052e; font-weight: 800; font-family: "Trebuchet MS", Verdana, sans-serif;
+    border-bottom: 2px solid #fff; padding: 4px 0; font-size: .82rem; letter-spacing: .03em;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  }
+  .marquee b { display: inline-block; padding-left: 100%; animation: marquee 24s linear infinite; }
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-100%) } }
+  .back-link {
+    position: fixed; top: 2.4rem; left: 1rem; z-index: 56;
+    display: inline-flex; align-items: center; gap: .4rem;
+    text-decoration: none; color: var(--fg);
+    background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.3));
+    border: 2px solid rgba(255,255,255,.5);
+    border-radius: 10px; padding: .5rem .9rem; font-size: .9rem; font-weight: 700;
+    box-shadow: inset 0 1px 3px rgba(255,255,255,.4), 0 0 10px rgba(0,240,255,.3);
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .back-link:hover { border-color: var(--accent2); transform: translateX(-3px); box-shadow: 0 0 14px rgba(0,240,255,.7); }
+  h1 {
+    font-family: "Trebuchet MS", Verdana, sans-serif; font-weight: 900;
+    font-size: clamp(2rem, 7vw, 3.4rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #ffffff 0%, #bfe6ff 40%, #5aa9ff 50%, #ffffff 53%, #ffb3ec 72%, #ff39a8 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,.35);
+    filter: drop-shadow(0 0 10px rgba(0,240,255,.65)) drop-shadow(2px 3px 0 rgba(255,57,168,.55));
+  }
+  p { font-family: "Comic Sans MS", "Trebuchet MS", cursive; color: var(--muted); text-shadow: 0 0 8px rgba(0,240,255,.35); }
+
+  .emoji {
+    font-size: clamp(6rem, 28vw, 14rem);
+    line-height: 1;
+    cursor: pointer;
+    display: inline-block;
+    /* 3D perspective so the nod tilts toward/away from the viewer */
+    perspective: 600px;
+    transform-origin: 50% 50%;
+    transition: transform 0.15s ease;
+    filter: drop-shadow(0 0 18px rgba(0,240,255,.5)) drop-shadow(0 0 30px rgba(255,57,168,.4));
+  }
+  .emoji:hover { transform: scale(1.05); }
+  .emoji:active { transform: scale(0.96); }
+
+  .emoji.nod {
+    animation: nod 1s ease-in-out;
+  }
+  /* nodding "yes" — tips forward and back, easing out */
+  @keyframes nod {
+    0%   { transform: rotateX(0deg); }
+    15%  { transform: rotateX(35deg); }
+    35%  { transform: rotateX(-28deg); }
+    55%  { transform: rotateX(20deg); }
+    72%  { transform: rotateX(-12deg); }
+    87%  { transform: rotateX(6deg); }
+    100% { transform: rotateX(0deg); }
+  }
+</style>
+</head>
+<body>
+  <div class="marquee"><b>✦ FINGERS CROSSED 🤞 ✦ &nbsp; ~*~ wishing u luck ~*~ &nbsp; ✦ click the emoji to make it nod ✦ &nbsp; good vibes only ✦ &nbsp; 🤞🤞🤞 ✦ &nbsp;</b></div>
+  <a class="back-link" href="index.html">← Back to Augh</a>
+
+  <h1>Fingers Crossed</h1>
+  <span class="emoji" id="fc" role="button" tabindex="0" aria-label="Fingers crossed emoji">🤞</span>
+  <p>Click the emoji to make it nod.</p>
+
+<script>
+  const fc = document.getElementById('fc');
+
+  function nod() {
+    // restart the animation even on rapid repeat clicks
+    fc.classList.remove('nod');
+    void fc.offsetWidth; // force reflow
+    fc.classList.add('nod');
+  }
+
+  fc.addEventListener('click', nod);
+  fc.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nod(); }
+  });
+  fc.addEventListener('animationend', () => fc.classList.remove('nod'));
+</script>
+</body>
+</html>
