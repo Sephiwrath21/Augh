@@ -146,6 +146,52 @@
   .mtile.flag { background: #e53170; }
   .mtile.boom { background: #ff5470; }
 
+  /* battleship */
+  .bs-wrap { display: flex; flex-direction: column; gap: .5rem; align-items: center; width: 100%; }
+  .bs-label { color: var(--muted); font-size: .82rem; align-self: center; }
+  .bs-grid { display: grid; gap: 2px; }
+  .bs-cell { width: 28px; height: 28px; background: #14131d; border: 1px solid var(--line); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: .85rem; cursor: pointer; }
+  .bs-cell.ship { background: #2f2b40; }
+  .bs-cell.hit { background: #ff5470; }
+  .bs-cell.miss { background: #232233; color: var(--muted); cursor: default; }
+  .bs-cell.sunk { background: #7a2540; }
+  .bs-grid.enemy .bs-cell:hover { border-color: var(--accent); }
+
+  /* solitaire */
+  .sol-wrap { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
+  .sol-row { display: flex; gap: 8px; justify-content: center; }
+  .sol-col { display: flex; flex-direction: column; align-items: center; width: 58px; min-height: 84px; }
+  .sol-col .card + .card { margin-top: -62px; }
+  .card { width: 58px; height: 82px; flex: none; border-radius: 8px; background: #fffffe; color: #14131d;
+    border: 1px solid #c9c9d4; font-weight: 700; font-size: .95rem; cursor: pointer; position: relative; }
+  .card .corner { position: absolute; top: 4px; left: 5px; line-height: 1; }
+  .card.red { color: #e5396f; }
+  .card.down { background: linear-gradient(135deg,#3a3358,#241f3a); border-color: #2a2839; color: transparent; cursor: default; }
+  .card.sel { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 2; }
+  .sol-slot { width: 58px; height: 82px; flex: none; border-radius: 8px; border: 1px dashed var(--line);
+    display: flex; align-items: center; justify-content: center; color: #4a4860; font-size: 1.3rem; cursor: pointer; }
+
+  /* connect four */
+  .c4-board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; background: #14131d;
+    padding: 8px; border-radius: 12px; max-width: 420px; width: 100%; margin: 0 auto; }
+  .c4-cell { aspect-ratio: 1; background: var(--bg); border-radius: 50%; cursor: pointer; transition: transform .1s; }
+  .c4-cell:hover { transform: scale(1.06); }
+  .c4-cell.you { background: radial-gradient(circle at 35% 30%, #ffd25e, var(--accent)); }
+  .c4-cell.cpu { background: radial-gradient(circle at 35% 30%, #ff8aab, var(--accent2)); }
+
+  /* sliding puzzle */
+  .p15-grid { display: grid; grid-template-columns: repeat(4, 70px); grid-template-rows: repeat(4, 70px);
+    gap: 6px; background: #14131d; padding: 6px; border-radius: 12px; }
+  .p15-tile { display: flex; align-items: center; justify-content: center; border-radius: 8px;
+    font-weight: 700; font-size: 1.4rem; background: #7f5af0; color: #fffffe; cursor: pointer;
+    transition: transform .08s ease; }
+  .p15-tile:not(.blank):hover { transform: scale(1.04); }
+  .p15-tile.blank { background: transparent; cursor: default; }
+
+  /* shared arcade canvas */
+  .arc-canvas { background: #14131d; border: 1px solid var(--line); border-radius: 12px; touch-action: none; max-width: 100%; }
+
   footer { margin-top: 3rem; color: var(--muted); font-size: .8rem; text-align: center; }
   footer code { background: var(--card); padding: 2px 8px; border-radius: 6px; color: var(--accent); }
 </style>
@@ -155,7 +201,7 @@
 
   <header>
     <h1>Augh Arcade</h1>
-    <p class="tagline">Five tiny games. No installs, no scores saved, no regrets.</p>
+    <p class="tagline">A pile of tiny games. No installs, no scores saved, no regrets.</p>
   </header>
 
   <!-- HUB -->
@@ -170,6 +216,12 @@
     <div class="game-card" data-game="g2048"><span class="ico">🔢</span><h3>2048</h3><p>Merge tiles to 2048.</p></div>
     <div class="game-card" data-game="hangman"><span class="ico">🔤</span><h3>Hangman</h3><p>Guess the word in 6 tries.</p></div>
     <div class="game-card" data-game="mines"><span class="ico">💣</span><h3>Minesweeper</h3><p>Clear the field, dodge mines.</p></div>
+    <div class="game-card" data-game="battleship"><span class="ico">🚢</span><h3>Battleship</h3><p>Sink the CPU's fleet.</p></div>
+    <div class="game-card" data-game="solitaire"><span class="ico">🃏</span><h3>Solitaire</h3><p>Classic Klondike.</p></div>
+    <div class="game-card" data-game="connect4"><span class="ico">🔴</span><h3>Connect Four</h3><p>Four in a row beats the CPU.</p></div>
+    <div class="game-card" data-game="breakout"><span class="ico">🧱</span><h3>Breakout</h3><p>Smash every brick.</p></div>
+    <div class="game-card" data-game="pong"><span class="ico">🏓</span><h3>Pong</h3><p>First to 7 points.</p></div>
+    <div class="game-card" data-game="puzzle15"><span class="ico">🧩</span><h3>15 Puzzle</h3><p>Slide tiles into order.</p></div>
   </div>
 
   <!-- PANEL -->
@@ -668,6 +720,448 @@ GAMES.mines = function(){
       setScore(`Mines: ${MINES} · Flags: ${flags}`);
     });
   });
+  cleanup = () => {};
+};
+
+/* ---------- 11. Battleship ---------- */
+GAMES.battleship = function(){
+  const N = 10, FLEET = [5,4,3,3,2];
+  function makeBoard(){
+    const cells = Array.from({length:N*N}, () => ({ ship:false, hit:false, shipId:-1 }));
+    const ships = [];
+    FLEET.forEach((len, id) => {
+      let placed = false;
+      while (!placed){
+        const horiz = Math.random() < 0.5;
+        const r = (Math.random()*N)|0, c = (Math.random()*N)|0;
+        const coords = [];
+        for (let k = 0; k < len; k++){
+          const rr = r + (horiz?0:k), cc = c + (horiz?k:0);
+          if (rr>=N || cc>=N){ coords.length = 0; break; }
+          coords.push(rr*N+cc);
+        }
+        if (!coords.length || coords.some(i => cells[i].ship)) continue;
+        coords.forEach(i => { cells[i].ship = true; cells[i].shipId = id; });
+        ships.push({ id, len, coords, hits:0 });
+        placed = true;
+      }
+    });
+    return { cells, ships };
+  }
+  const enemy = makeBoard(), player = makeBoard();
+  let over = false, lock = false;
+
+  const wrap = el('div', { className: 'bs-wrap' });
+  const enemyGrid = el('div', { className: 'bs-grid enemy', style: `grid-template-columns: repeat(${N}, 28px)` });
+  const youGrid = el('div', { className: 'bs-grid', style: `grid-template-columns: repeat(${N}, 28px)` });
+  const enemyCells = [], youCells = [];
+  for (let i = 0; i < N*N; i++){
+    const ec = el('div', { className: 'bs-cell' }); enemyCells.push(ec); enemyGrid.append(ec);
+    const yc = el('div', { className: 'bs-cell' + (player.cells[i].ship ? ' ship' : '') }); youCells.push(yc); youGrid.append(yc);
+  }
+  wrap.append(
+    el('div', { className: 'bs-label', textContent: '🎯 Enemy waters — click to fire' }), enemyGrid,
+    el('div', { className: 'bs-label', textContent: '⚓ Your fleet' }), youGrid
+  );
+  stage.append(wrap);
+
+  const left = b => b.ships.filter(s => s.hits < s.len).length;
+  const update = () => setScore(`Enemy ships: ${left(enemy)} · Your ships: ${left(player)}`);
+  update();
+
+  function fire(board, cells, i){
+    const cell = board.cells[i];
+    if (cell.hit) return null;
+    cell.hit = true;
+    if (cell.ship){
+      cells[i].classList.add('hit'); cells[i].textContent = '💥';
+      const ship = board.ships[cell.shipId];
+      if (++ship.hits === ship.len)
+        ship.coords.forEach(j => { cells[j].classList.remove('hit'); cells[j].classList.add('sunk'); cells[j].textContent = '☠'; });
+      return true;
+    }
+    cells[i].classList.add('miss'); cells[i].textContent = '·';
+    return false;
+  }
+
+  const cpuQueue = [], cpuTried = new Set();
+  function cpuFire(){
+    let target = -1;
+    while (cpuQueue.length){ const t = cpuQueue.shift(); if (!cpuTried.has(t)){ target = t; break; } }
+    if (target < 0){
+      const avail = [];
+      for (let i = 0; i < N*N; i++) if (!cpuTried.has(i)) avail.push(i);
+      target = avail[(Math.random()*avail.length)|0];
+    }
+    cpuTried.add(target);
+    if (fire(player, youCells, target)){
+      const r = (target/N)|0, c = target%N;
+      [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc]) => {
+        if (rr>=0 && rr<N && cc>=0 && cc<N){ const j = rr*N+cc; if (!cpuTried.has(j)) cpuQueue.push(j); }
+      });
+    }
+    update();
+    if (left(player) === 0){ over = true; setScore('💀 Your fleet is sunk — CPU wins!'); }
+  }
+
+  enemyCells.forEach((ec, i) => ec.addEventListener('click', () => {
+    if (over || lock || enemy.cells[i].hit) return;
+    fire(enemy, enemyCells, i);
+    update();
+    if (left(enemy) === 0){ over = true; setScore('🏆 You sank the enemy fleet — you win!'); return; }
+    lock = true;
+    setTimeout(() => { if (!over) cpuFire(); lock = false; }, 400);
+  }));
+  cleanup = () => {};
+};
+
+/* ---------- 12. Solitaire (Klondike) ---------- */
+GAMES.solitaire = function(){
+  const SUITS = [['♠','black'],['♥','red'],['♦','red'],['♣','black']];
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  let deck = [];
+  SUITS.forEach((s, si) => RANKS.forEach((_, ri) => deck.push({ suit:s[0], color:s[1], si, rank:ri, up:false })));
+  for (let i = deck.length-1; i > 0; i--){ const j = (Math.random()*(i+1))|0; [deck[i],deck[j]] = [deck[j],deck[i]]; }
+
+  const tableau = [[],[],[],[],[],[],[]], foundations = [[],[],[],[]];
+  for (let c = 0; c < 7; c++) for (let k = 0; k <= c; k++){ const card = deck.pop(); card.up = (k === c); tableau[c].push(card); }
+  let stock = deck, waste = [], sel = null;
+
+  const hint = el('p', { className: 'score', textContent: 'Click a card, then click where to move it. Click the deck to draw.' });
+  const newBtn = el('button', { className: 'btn', textContent: 'New deal' });
+  newBtn.addEventListener('click', () => openGame('solitaire'));
+  const wrap = el('div', { className: 'sol-wrap' });
+  stage.append(hint, newBtn, wrap);
+
+  function cardEl(card){
+    const d = el('div', { className: 'card' + (card.up ? (card.color === 'red' ? ' red' : '') : ' down') });
+    if (card.up) d.append(el('span', { className: 'corner', textContent: RANKS[card.rank] + card.suit }));
+    return d;
+  }
+  const topWaste = () => waste[waste.length-1];
+
+  function canFoundation(fi, card){
+    if (card.si !== fi) return false;
+    const f = foundations[fi];
+    return f.length ? card.rank === f[f.length-1].rank + 1 : card.rank === 0;
+  }
+  function selectedRun(){
+    if (!sel) return [];
+    if (sel.type === 'waste') return waste.length ? [topWaste()] : [];
+    const col = tableau[sel.col], run = col.slice(sel.idx);
+    for (let i = 0; i < run.length-1; i++)
+      if (!(run[i].color !== run[i+1].color && run[i].rank === run[i+1].rank + 1)) return [];
+    return run;
+  }
+  function removeSelected(){
+    if (sel.type === 'waste') waste.pop();
+    else {
+      const col = tableau[sel.col];
+      col.splice(sel.idx);
+      if (col.length && !col[col.length-1].up) col[col.length-1].up = true;
+    }
+  }
+  function afterMove(){
+    const total = foundations.reduce((a, f) => a + f.length, 0);
+    setScore(total === 52 ? '🎉 You won Solitaire!' : `Foundations: ${total}/52`);
+    sel = null; render();
+  }
+  function drawStock(){
+    sel = null;
+    if (stock.length){ const c = stock.pop(); c.up = true; waste.push(c); }
+    else { stock = waste.reverse(); stock.forEach(c => c.up = false); waste = []; }
+    render();
+  }
+  function toFoundation(fi){
+    if (!sel) return;
+    let card;
+    if (sel.type === 'waste') card = topWaste();
+    else { const col = tableau[sel.col]; if (sel.idx !== col.length-1) return; card = col[sel.idx]; }
+    if (card && canFoundation(fi, card)){ foundations[fi].push(card); removeSelected(); afterMove(); }
+    else { sel = null; render(); }
+  }
+  function autoFoundation(card, remove){
+    for (let fi = 0; fi < 4; fi++) if (canFoundation(fi, card)){ foundations[fi].push(card); remove(); afterMove(); return true; }
+    return false;
+  }
+  function toColumn(ci){
+    const moving = selectedRun();
+    if (!moving.length){ sel = null; render(); return; }
+    const dest = tableau[ci], first = moving[0];
+    const ok = dest.length
+      ? (dest[dest.length-1].up && dest[dest.length-1].color !== first.color && dest[dest.length-1].rank === first.rank + 1)
+      : first.rank === 12;
+    if (ok){ removeSelected(); dest.push(...moving); afterMove(); }
+    else { sel = null; render(); }
+  }
+
+  function render(){
+    wrap.innerHTML = '';
+    const top = el('div', { className: 'sol-row' });
+    const stockEl = stock.length ? el('div', { className: 'card down' }) : el('div', { className: 'sol-slot', textContent: '↺' });
+    stockEl.addEventListener('click', drawStock);
+    top.append(stockEl);
+
+    if (waste.length){
+      const w = cardEl(topWaste());
+      if (sel && sel.type === 'waste') w.classList.add('sel');
+      w.addEventListener('click', () => { sel = (sel && sel.type === 'waste') ? null : { type:'waste' }; render(); });
+      w.addEventListener('dblclick', () => autoFoundation(topWaste(), () => waste.pop()));
+      top.append(w);
+    } else top.append(el('div', { className: 'sol-slot' }));
+
+    top.append(el('div', { className: 'sol-slot', style: 'border:none;cursor:default;visibility:hidden' }));
+
+    foundations.forEach((f, fi) => {
+      const fe = f.length ? cardEl(f[f.length-1]) : el('div', { className: 'sol-slot', textContent: SUITS[fi][0] });
+      fe.addEventListener('click', () => toFoundation(fi));
+      top.append(fe);
+    });
+    wrap.append(top);
+
+    const tab = el('div', { className: 'sol-row' });
+    tableau.forEach((col, ci) => {
+      const ce = el('div', { className: 'sol-col' });
+      if (!col.length){
+        const slot = el('div', { className: 'sol-slot' });
+        slot.addEventListener('click', () => { if (sel) toColumn(ci); });
+        ce.append(slot);
+      }
+      col.forEach((card, k) => {
+        const cd = cardEl(card);
+        if (sel && sel.type === 'tableau' && sel.col === ci && k >= sel.idx) cd.classList.add('sel');
+        if (card.up){
+          cd.addEventListener('click', () => {
+            if (sel){ toColumn(ci); }
+            else { sel = { type:'tableau', col:ci, idx:k }; render(); }
+          });
+          cd.addEventListener('dblclick', () => {
+            if (k === tableau[ci].length-1) autoFoundation(card, () => { tableau[ci].pop(); if (tableau[ci].length && !tableau[ci][tableau[ci].length-1].up) tableau[ci][tableau[ci].length-1].up = true; });
+          });
+        }
+        ce.append(cd);
+      });
+      tab.append(ce);
+    });
+    wrap.append(tab);
+  }
+  setScore('Foundations: 0/52');
+  render();
+  cleanup = () => {};
+};
+
+/* ---------- 13. Connect Four ---------- */
+GAMES.connect4 = function(){
+  const COLS = 7, ROWS = 6, idx = (r,c) => r*COLS + c;
+  let board = Array(COLS*ROWS).fill(0), over = false;
+  const boardEl = el('div', { className: 'c4-board' });
+  const cells = [];
+  for (let i = 0; i < COLS*ROWS; i++){
+    const cell = el('div', { className: 'c4-cell' });
+    cell.addEventListener('click', () => play(i % COLS));
+    cells.push(cell); boardEl.append(cell);
+  }
+  const reset = el('button', { className: 'btn', textContent: 'New game' });
+  const msg = () => setScore('Your turn — you are 🟡');
+  reset.addEventListener('click', () => { board.fill(0); over = false; draw(); msg(); });
+  stage.append(boardEl, reset);
+
+  function draw(){ board.forEach((v, i) => { cells[i].classList.toggle('you', v === 1); cells[i].classList.toggle('cpu', v === 2); }); }
+  function drop(c, p){ for (let r = ROWS-1; r >= 0; r--) if (!board[idx(r,c)]){ board[idx(r,c)] = p; return r; } return -1; }
+  function wins(p){
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (board[idx(r,c)] === p)
+      for (const [dr,dc] of dirs){
+        let k = 1;
+        while (k < 4){ const nr = r+dr*k, nc = c+dc*k; if (nr<0||nr>=ROWS||nc<0||nc>=COLS||board[idx(nr,nc)]!==p) break; k++; }
+        if (k === 4) return true;
+      }
+    return false;
+  }
+  const full = () => board.every(Boolean);
+  const validCols = () => { const v = []; for (let c = 0; c < COLS; c++) if (!board[idx(0,c)]) v.push(c); return v; };
+  function cpuMove(){
+    const cols = validCols();
+    for (const c of cols){ const r = drop(c, 2); const w = wins(2); board[idx(r,c)] = 0; if (w) return c; }
+    for (const c of cols){ const r = drop(c, 1); const w = wins(1); board[idx(r,c)] = 0; if (w) return c; }
+    const order = [3,2,4,1,5,0,6].filter(c => cols.includes(c));
+    return order.length ? order[0] : cols[(Math.random()*cols.length)|0];
+  }
+  function play(c){
+    if (over || board[idx(0,c)]) return;
+    drop(c, 1); draw();
+    if (wins(1)){ over = true; setScore('🏆 You win!'); return; }
+    if (full()){ over = true; setScore("It's a draw!"); return; }
+    drop(cpuMove(), 2); draw();
+    if (wins(2)){ over = true; setScore('🤖 CPU wins!'); return; }
+    if (full()){ over = true; setScore("It's a draw!"); }
+  }
+  draw(); msg();
+  cleanup = () => {};
+};
+
+/* ---------- 14. Breakout ---------- */
+GAMES.breakout = function(){
+  const W = 440, H = 360, cols = 8, rows = 5, bw = (W-40)/cols, bh = 18;
+  const canvas = el('canvas', { className: 'arc-canvas', width: W, height: H });
+  const hint = el('p', { className: 'score', textContent: 'Move mouse / arrows to steer · click to launch' });
+  stage.append(canvas, hint);
+  const ctx = canvas.getContext('2d');
+  const rowColors = ['#ff5470','#ff8906','#ffd803','#2cb67d','#00ebc7'];
+  const paddle = { w: 74, h: 11, x: W/2-37 };
+  let ball, bricks, lives, score, running, launched, raf;
+
+  function reset(){
+    paddle.x = W/2 - paddle.w/2;
+    ball = { x: W/2, y: H-40, vx: 0, vy: 0, r: 7 };
+    launched = false; lives = 3; score = 0; running = true;
+    bricks = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+      bricks.push({ x: 20 + c*bw, y: 44 + r*bh*1.5, alive: true, row: r });
+    setScore(`Lives: ${lives} · Score: 0`);
+  }
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    bricks.forEach(b => { if (!b.alive) return; ctx.fillStyle = rowColors[b.row]; ctx.fillRect(b.x, b.y, bw-4, bh-4); });
+    ctx.fillStyle = '#7f5af0'; ctx.fillRect(paddle.x, H-20, paddle.w, paddle.h);
+    ctx.beginPath(); ctx.fillStyle = '#fffffe'; ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fill();
+  }
+  function step(){
+    if (!running){ render(); return; }
+    if (launched){ ball.x += ball.vx; ball.y += ball.vy; } else { ball.x = paddle.x + paddle.w/2; ball.y = H-40; }
+    if (ball.x < ball.r || ball.x > W-ball.r) ball.vx *= -1;
+    if (ball.y < ball.r) ball.vy *= -1;
+    if (ball.vy > 0 && ball.y+ball.r >= H-20 && ball.y+ball.r <= H-6 && ball.x >= paddle.x && ball.x <= paddle.x+paddle.w){
+      ball.vy *= -1; ball.vx = ((ball.x - (paddle.x+paddle.w/2)) / (paddle.w/2)) * 4.5;
+    }
+    if (ball.y > H + 20){
+      lives--;
+      if (lives <= 0){ running = false; setScore(`Game over · Score: ${score} — click to retry`); }
+      else { launched = false; setScore(`Lives: ${lives} · Score: ${score}`); }
+    }
+    for (const b of bricks){
+      if (!b.alive) continue;
+      if (ball.x >= b.x && ball.x <= b.x+bw-4 && ball.y-ball.r <= b.y+bh-4 && ball.y+ball.r >= b.y){
+        b.alive = false; ball.vy *= -1; score += 10; setScore(`Lives: ${lives} · Score: ${score}`);
+        if (bricks.every(x => !x.alive)){ running = false; setScore(`🎉 Cleared! Score: ${score}`); }
+        break;
+      }
+    }
+    render();
+    raf = requestAnimationFrame(step);
+  }
+  function start(){ reset(); cancelAnimationFrame(raf); step(); }
+  const launch = () => { if (!launched){ launched = true; ball.vx = 3*(Math.random()<.5?-1:1); ball.vy = -4.4; } };
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    paddle.x = Math.max(0, Math.min(W-paddle.w, (e.clientX-rect.left)*(W/rect.width) - paddle.w/2));
+  });
+  canvas.addEventListener('touchmove', e => {
+    const rect = canvas.getBoundingClientRect();
+    paddle.x = Math.max(0, Math.min(W-paddle.w, (e.touches[0].clientX-rect.left)*(W/rect.width) - paddle.w/2));
+  }, { passive: true });
+  canvas.addEventListener('click', () => { if (!running) start(); else launch(); });
+  const key = e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a'){ paddle.x = Math.max(0, paddle.x-26); e.preventDefault(); }
+    else if (k === 'arrowright' || k === 'd'){ paddle.x = Math.min(W-paddle.w, paddle.x+26); e.preventDefault(); }
+    else if (k === ' '){ launch(); e.preventDefault(); }
+  };
+  window.addEventListener('keydown', key);
+  start();
+  cleanup = () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', key); };
+};
+
+/* ---------- 15. Pong ---------- */
+GAMES.pong = function(){
+  const W = 460, H = 300, pw = 10, ph = 64, WIN = 7;
+  const canvas = el('canvas', { className: 'arc-canvas', width: W, height: H });
+  const hint = el('p', { className: 'score', textContent: 'Move mouse / arrows · first to 7' });
+  stage.append(canvas, hint);
+  const ctx = canvas.getContext('2d');
+  let you = H/2-ph/2, cpu = H/2-ph/2, ball, sYou = 0, sCpu = 0, raf, over = false;
+
+  const serve = dir => { ball = { x: W/2, y: H/2, vx: dir*4.2, vy: (Math.random()*4-2), r: 7 }; };
+  function score(who){
+    if (who === 'you') sYou++; else sCpu++;
+    setScore(`You ${sYou} — ${sCpu} CPU`);
+    if (sYou >= WIN){ over = true; setScore(`🏆 You win ${sYou}–${sCpu}! — click to replay`); }
+    else if (sCpu >= WIN){ over = true; setScore(`🤖 CPU wins ${sCpu}–${sYou} — click to replay`); }
+    else serve(who === 'you' ? 1 : -1);
+  }
+  function step(){
+    if (!over){
+      ball.x += ball.vx; ball.y += ball.vy;
+      if (ball.y < ball.r || ball.y > H-ball.r) ball.vy *= -1;
+      // cpu paddle tracks ball
+      const cc = cpu + ph/2;
+      if (cc < ball.y - 8) cpu += 3.4; else if (cc > ball.y + 8) cpu -= 3.4;
+      cpu = Math.max(0, Math.min(H-ph, cpu));
+      // left paddle (you)
+      if (ball.vx < 0 && ball.x-ball.r <= 18 && ball.x-ball.r >= 6 && ball.y >= you && ball.y <= you+ph){
+        ball.vx = Math.abs(ball.vx); ball.vy += ((ball.y-(you+ph/2))/(ph/2))*2;
+      }
+      // right paddle (cpu)
+      if (ball.vx > 0 && ball.x+ball.r >= W-18 && ball.x+ball.r <= W-6 && ball.y >= cpu && ball.y <= cpu+ph){
+        ball.vx = -Math.abs(ball.vx); ball.vy += ((ball.y-(cpu+ph/2))/(ph/2))*2;
+      }
+      if (ball.x < 0) score('cpu');
+      else if (ball.x > W) score('you');
+    }
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = '#2a2839'; ctx.setLineDash([6,10]); ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#2cb67d'; ctx.fillRect(8, you, pw, ph);
+    ctx.fillStyle = '#ff5470'; ctx.fillRect(W-8-pw, cpu, pw, ph);
+    ctx.fillStyle = '#fffffe'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fill();
+    raf = requestAnimationFrame(step);
+  }
+  const setYou = clientY => { const rect = canvas.getBoundingClientRect(); you = Math.max(0, Math.min(H-ph, (clientY-rect.top)*(H/rect.height) - ph/2)); };
+  canvas.addEventListener('mousemove', e => setYou(e.clientY));
+  canvas.addEventListener('touchmove', e => setYou(e.touches[0].clientY), { passive: true });
+  canvas.addEventListener('click', () => { if (over){ over = false; sYou = sCpu = 0; setScore('You 0 — 0 CPU'); serve(1); } });
+  const key = e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup' || k === 'w'){ you = Math.max(0, you-28); e.preventDefault(); }
+    else if (k === 'arrowdown' || k === 's'){ you = Math.min(H-ph, you+28); e.preventDefault(); }
+  };
+  window.addEventListener('keydown', key);
+  setScore('You 0 — 0 CPU'); serve(1); step();
+  cleanup = () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', key); };
+};
+
+/* ---------- 16. 15 Puzzle ---------- */
+GAMES.puzzle15 = function(){
+  const N = 4;
+  let tiles = [...Array(15).keys()].map(x => x+1).concat(0), moves = 0;
+  const gridEl = el('div', { className: 'p15-grid' });
+  const reset = el('button', { className: 'btn', textContent: 'Shuffle' });
+  stage.append(gridEl, reset);
+  const blank = () => tiles.indexOf(0);
+  const adj = (i, j) => Math.abs(((i/N)|0)-((j/N)|0)) + Math.abs((i%N)-(j%N)) === 1;
+  const solved = () => tiles.every((t, i) => i === 15 ? t === 0 : t === i+1);
+  function check(){ setScore(solved() ? `🎉 Solved in ${moves} moves!` : `Moves: ${moves}`); }
+  function slide(i){ const b = blank(); if (adj(i, b)){ [tiles[i],tiles[b]] = [tiles[b],tiles[i]]; moves++; draw(); check(); } }
+  function shuffle(){
+    do {
+      for (let k = 0; k < 400; k++){
+        const b = blank();
+        const nb = [b-1, b+1, b-N, b+N].filter(x => x>=0 && x<16 && adj(x, b));
+        const p = nb[(Math.random()*nb.length)|0];
+        [tiles[b],tiles[p]] = [tiles[p],tiles[b]];
+      }
+    } while (solved());
+    moves = 0; draw(); setScore('Moves: 0');
+  }
+  function draw(){
+    gridEl.innerHTML = '';
+    tiles.forEach((t, i) => {
+      const d = el('div', { className: 'p15-tile' + (t === 0 ? ' blank' : ''), textContent: t || '' });
+      if (t) d.addEventListener('click', () => slide(i));
+      gridEl.append(d);
+    });
+  }
+  shuffle();
   cleanup = () => {};
 };
 </script>

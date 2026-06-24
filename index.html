@@ -79,6 +79,27 @@
     min-width: min(90vw, 500px);
   }
   .counter { font-variant-numeric: tabular-nums; }
+  .button-corner {
+    margin-top: 3rem;
+    width: min(900px, 100%);
+    background: var(--card);
+    border: 1px solid #2a2839;
+    border-radius: 18px;
+    padding: 1.75rem 1.5rem;
+  }
+  .button-corner h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .button-corner > p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .sfx-row {
+    display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+  }
+  .sfx { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; max-width: 220px; }
+  .sfx iframe { border-radius: 12px; }
+  .sfx .cap { color: var(--muted); font-size: 0.85rem; line-height: 1.3; }
   footer { margin-top: auto; padding-top: 3rem; color: var(--muted); font-size: 0.8rem; }
   footer code { background: var(--card); padding: 2px 8px; border-radius: 6px; color: var(--accent); }
   .pulse { animation: pulse 0.4s ease; }
@@ -120,6 +141,21 @@
   </div>
 
   <div id="stage">Pick a card above. ☝️</div>
+
+  <section class="button-corner">
+    <h2>🔊 Button Corner</h2>
+    <p>Sound buttons for life's little moments. Turn your volume up.</p>
+    <div class="sfx-row">
+      <div class="sfx">
+        <iframe width="110" height="200" src="https://www.myinstants.com/instant/tuco-get-out-30566/embed/" frameborder="0" scrolling="no" title="Get out sound button"></iframe>
+        <span class="cap">Click when there's some frustrating stuff happening.</span>
+      </div>
+      <div class="sfx">
+        <iframe width="110" height="200" src="https://www.myinstants.com/instant/fahhhhhhhhhhhhhh-3525/embed/" frameborder="0" scrolling="no" title="Fahh sound button"></iframe>
+        <span class="cap">Click when there's some unexpected stuff happening.</span>
+      </div>
+    </div>
+  </section>
 
   <footer>
     Built for fun · served from the <code>Augh</code> repo
