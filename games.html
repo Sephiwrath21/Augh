@@ -65,6 +65,15 @@
   }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); border: none; font-weight: 600; }
+  .back-link {
+    position: fixed; top: 1rem; left: 1rem; z-index: 20;
+    display: inline-flex; align-items: center; gap: .4rem;
+    text-decoration: none; color: var(--fg);
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: .5rem .9rem; font-size: .9rem;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .back-link:hover { border-color: var(--accent); transform: translateX(-3px); }
   .stage {
     background: var(--card); border: 1px solid var(--line); border-radius: 18px;
     padding: 1.5rem; min-height: 360px; display: flex; flex-direction: column;
@@ -142,6 +151,8 @@
 </style>
 </head>
 <body>
+  <a class="back-link" href="index.html">← Back to Augh</a>
+
   <header>
     <h1>Augh Arcade</h1>
     <p class="tagline">Five tiny games. No installs, no scores saved, no regrets.</p>
