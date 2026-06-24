@@ -6,35 +6,72 @@
 <title>Augh Arcade 🕹️</title>
 <style>
   :root {
-    --bg: #0f0e17;
-    --fg: #fffffe;
-    --accent: #ff8906;
-    --accent2: #e53170;
-    --muted: #a7a9be;
-    --card: #1a1925;
-    --line: #2a2839;
+    --bg: #0a0118;
+    --fg: #ffffff;
+    --accent: #ff39a8;
+    --accent2: #00f0ff;
+    --lime: #b2ff3a;
+    --muted: #bdd9ff;
+    --card: #190a33;
+    --line: #3a2a5e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: radial-gradient(circle at 20% 10%, #241f3a 0%, var(--bg) 60%);
+    font-family: "Trebuchet MS", Verdana, Tahoma, sans-serif;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(0,240,255,.28), transparent 55%),
+      radial-gradient(circle at 12% 18%, rgba(255,57,168,.28), transparent 50%),
+      linear-gradient(#1a0b3a, var(--bg));
+    background-attachment: fixed;
     color: var(--fg);
     min-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem 1rem 4rem;
+    padding: 2.8rem 1rem 4rem;
     user-select: none;
   }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 75% 22%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 40% 70%, #d6f3ff, transparent),
+      radial-gradient(1px 1px at 88% 62%, #ffd6f5, transparent),
+      radial-gradient(2px 2px at 62% 88%, #fff, transparent);
+    animation: twinkle 4s ease-in-out infinite alternate;
+  }
+  body::after {
+    content: ''; position: fixed; left: -50%; right: -50%; bottom: -12%; height: 50vh; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,240,255,.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,57,168,.4) 1px, transparent 1px);
+    background-size: 42px 42px;
+    transform: perspective(320px) rotateX(62deg); transform-origin: bottom center;
+    -webkit-mask-image: linear-gradient(transparent, #000 55%); mask-image: linear-gradient(transparent, #000 55%);
+  }
+  @keyframes twinkle { from { opacity: .45 } to { opacity: .9 } }
   header { text-align: center; margin-bottom: 2rem; }
   h1 {
-    font-size: clamp(2.4rem, 9vw, 4.5rem);
-    letter-spacing: -0.04em;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    font-family: "Trebuchet MS", Verdana, sans-serif; font-weight: 900;
+    font-size: clamp(2.6rem, 9vw, 4.8rem);
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #ffffff 0%, #bfe6ff 40%, #5aa9ff 50%, #ffffff 53%, #ffb3ec 72%, #ff39a8 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,.35);
+    filter: drop-shadow(0 0 10px rgba(0,240,255,.65)) drop-shadow(2px 3px 0 rgba(255,57,168,.55));
   }
-  .tagline { color: var(--muted); margin-top: .5rem; }
+  .tagline { font-family: "Comic Sans MS", "Trebuchet MS", cursive; color: var(--muted); margin-top: .5rem; }
+  .marquee {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 55; overflow: hidden; white-space: nowrap;
+    background: linear-gradient(90deg, var(--accent), var(--lime), var(--accent2));
+    color: #15052e; font-weight: 800; font-family: "Trebuchet MS", Verdana, sans-serif;
+    border-bottom: 2px solid #fff; padding: 4px 0; font-size: .82rem; letter-spacing: .03em;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  }
+  .marquee b { display: inline-block; padding-left: 100%; animation: marquee 24s linear infinite; }
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-100%) } }
 
   /* ---- hub ---- */
   .grid {
@@ -44,12 +81,18 @@
     width: min(900px, 100%);
   }
   .game-card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    position: relative; overflow: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.03) 45%, rgba(0,0,0,.22));
+    border: 2px solid rgba(255,255,255,.55); border-radius: 16px;
     padding: 1.6rem 1.2rem; cursor: pointer; text-align: center;
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
     display: flex; flex-direction: column; gap: .5rem; align-items: center;
+    box-shadow: 0 0 0 2px rgba(0,240,255,.16), inset 0 2px 8px rgba(255,255,255,.3), 0 8px 18px -8px rgba(0,0,0,.7);
   }
-  .game-card:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 12px 30px -14px var(--accent2); }
+  .game-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 45%;
+    background: linear-gradient(180deg, rgba(255,255,255,.4), transparent); pointer-events: none; }
+  .game-card:hover { transform: translateY(-6px) scale(1.02); border-color: var(--accent2);
+    box-shadow: 0 0 18px rgba(0,240,255,.6), 0 0 26px rgba(255,57,168,.45), inset 0 2px 8px rgba(255,255,255,.35); }
   .game-card .ico { font-size: 2.6rem; }
   .game-card h3 { font-size: 1.1rem; }
   .game-card p { color: var(--muted); font-size: .82rem; }
@@ -66,14 +109,16 @@
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); border: none; font-weight: 600; }
   .back-link {
-    position: fixed; top: 1rem; left: 1rem; z-index: 20;
+    position: fixed; top: 2.4rem; left: 1rem; z-index: 56;
     display: inline-flex; align-items: center; gap: .4rem;
     text-decoration: none; color: var(--fg);
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 10px; padding: .5rem .9rem; font-size: .9rem;
-    transition: border-color .15s ease, transform .15s ease;
+    background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(0,0,0,.3));
+    border: 2px solid rgba(255,255,255,.5);
+    border-radius: 10px; padding: .5rem .9rem; font-size: .9rem; font-weight: 700;
+    box-shadow: inset 0 1px 3px rgba(255,255,255,.4), 0 0 10px rgba(0,240,255,.3);
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .back-link:hover { border-color: var(--accent); transform: translateX(-3px); }
+  .back-link:hover { border-color: var(--accent2); transform: translateX(-3px); box-shadow: 0 0 14px rgba(0,240,255,.7); }
   .stage {
     background: var(--card); border: 1px solid var(--line); border-radius: 18px;
     padding: 1.5rem; min-height: 360px; display: flex; flex-direction: column;
@@ -228,6 +273,7 @@
 </style>
 </head>
 <body>
+  <div class="marquee"><b>✦ AUGH ARCADE ✦ &nbsp; ~*~ 21 tiny games, 0 installs, infinite augh ~*~ &nbsp; ✦ high scores not saved (sorry) ✦ &nbsp; best played @ 800×600 ✦ &nbsp; insert coin 🪙 ✦ &nbsp;</b></div>
   <a class="back-link" href="index.html">← Back to Augh</a>
 
   <header>
