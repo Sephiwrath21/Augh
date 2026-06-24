@@ -192,6 +192,37 @@
   /* shared arcade canvas */
   .arc-canvas { background: #14131d; border: 1px solid var(--line); border-radius: 12px; touch-action: none; max-width: 100%; }
 
+  /* uno */
+  .uno-wrap { display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%; }
+  .uno-top { display: flex; align-items: center; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .uno-hand { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 600px; }
+  .uno-card { width: 52px; height: 78px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.3rem; color: #fffffe; cursor: default; border: 3px solid rgba(255,255,255,.85);
+    box-shadow: 0 4px 10px -4px #000; user-select: none; transition: transform .12s; }
+  .uno-card.play { cursor: pointer; }
+  .uno-card.play:hover { transform: translateY(-8px); }
+  .uno-card.dim { opacity: .35; }
+  .uno-back { width: 40px; height: 60px; border-radius: 8px; border: 3px solid rgba(255,255,255,.5);
+    background: repeating-linear-gradient(45deg,#241f3a,#241f3a 6px,#3a3358 6px,#3a3358 12px); }
+  .uno-mini { display: flex; }
+  .uno-mini .uno-back:not(:first-child) { margin-left: -26px; }
+  .uno-pick { display: flex; gap: 10px; }
+  .uno-pick button { width: 46px; height: 46px; border-radius: 10px; border: 2px solid rgba(255,255,255,.4); cursor: pointer; }
+
+  /* lights out */
+  .lo-grid { display: grid; grid-template-columns: repeat(5, 56px); gap: 8px; }
+  .lo-cell { width: 56px; height: 56px; border-radius: 10px; background: #1f1d2b; border: 1px solid var(--line); cursor: pointer;
+    transition: background .12s, box-shadow .12s; }
+  .lo-cell.on { background: radial-gradient(circle at 35% 30%, #ffe9a8, var(--accent)); box-shadow: 0 0 14px -2px var(--accent); }
+
+  /* tower of hanoi */
+  .hanoi-board { display: flex; gap: 10px; width: 100%; max-width: 520px; }
+  .hanoi-peg { flex: 1; height: 210px; display: flex; flex-direction: column-reverse; align-items: center;
+    border-bottom: 6px solid var(--line); border-radius: 4px; cursor: pointer; position: relative; }
+  .hanoi-peg::before { content: ''; position: absolute; bottom: 0; width: 6px; height: 100%; background: var(--line); border-radius: 4px; z-index: 0; }
+  .hanoi-peg.sel::before { background: var(--accent); }
+  .hanoi-disk { height: 22px; border-radius: 6px; margin-top: 3px; z-index: 1; }
+
   footer { margin-top: 3rem; color: var(--muted); font-size: .8rem; text-align: center; }
   footer code { background: var(--card); padding: 2px 8px; border-radius: 6px; color: var(--accent); }
 </style>
@@ -222,6 +253,11 @@
     <div class="game-card" data-game="breakout"><span class="ico">🧱</span><h3>Breakout</h3><p>Smash every brick.</p></div>
     <div class="game-card" data-game="pong"><span class="ico">🏓</span><h3>Pong</h3><p>First to 7 points.</p></div>
     <div class="game-card" data-game="puzzle15"><span class="ico">🧩</span><h3>15 Puzzle</h3><p>Slide tiles into order.</p></div>
+    <div class="game-card" data-game="tetris"><span class="ico">🟦</span><h3>Tetris</h3><p>Stack and clear the lines.</p></div>
+    <div class="game-card" data-game="uno"><span class="ico">🟥</span><h3>Uno</h3><p>Match colors & numbers vs CPU.</p></div>
+    <div class="game-card" data-game="flappy"><span class="ico">🐤</span><h3>Flappy</h3><p>Flap through the pipes.</p></div>
+    <div class="game-card" data-game="lightsout"><span class="ico">💡</span><h3>Lights Out</h3><p>Turn every light off.</p></div>
+    <div class="game-card" data-game="hanoi"><span class="ico">🗼</span><h3>Tower of Hanoi</h3><p>Move the stack across.</p></div>
   </div>
 
   <!-- PANEL -->
@@ -1162,6 +1198,280 @@ GAMES.puzzle15 = function(){
     });
   }
   shuffle();
+  cleanup = () => {};
+};
+
+/* ---------- 17. Tetris ---------- */
+GAMES.tetris = function(){
+  const COLS = 10, ROWS = 20, S = 18;
+  const canvas = el('canvas', { className: 'arc-canvas', width: COLS*S, height: ROWS*S });
+  const hint = el('p', { className: 'score', textContent: '← → move · ↑ rotate · ↓ soft drop · space hard drop' });
+  stage.append(canvas, hint);
+  const ctx = canvas.getContext('2d');
+  const COLORS = [null,'#00ebc7','#ffd803','#7f5af0','#ff8906','#2cb67d','#ff5470','#e53170'];
+  const SHAPES = {
+    I: [[1,1,1,1]], O: [[2,2],[2,2]], T: [[0,3,0],[3,3,3]],
+    L: [[0,0,4],[4,4,4]], J: [[5,0,0],[5,5,5]], S: [[0,6,6],[6,6,0]], Z: [[7,7,0],[0,7,7]],
+  };
+  const keys = Object.keys(SHAPES);
+  let grid, cur, pos, score, lines, level, dropTimer, over;
+
+  const newGrid = () => Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  function collide(shape, p){
+    for (let y = 0; y < shape.length; y++) for (let x = 0; x < shape[y].length; x++){
+      if (!shape[y][x]) continue;
+      const nx = p.x+x, ny = p.y+y;
+      if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+      if (ny >= 0 && grid[ny][nx]) return true;
+    }
+    return false;
+  }
+  function rotate(shape){
+    const h = shape.length, w = shape[0].length;
+    const r = Array.from({ length: w }, () => Array(h).fill(0));
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) r[x][h-1-y] = shape[y][x];
+    return r;
+  }
+  function spawn(){
+    const k = keys[(Math.random()*keys.length)|0];
+    cur = SHAPES[k].map(r => r.slice());
+    pos = { x: (COLS - cur[0].length) >> 1, y: 0 };
+    if (collide(cur, pos)){ over = true; clearInterval(dropTimer); setScore(`Game over · Score: ${score} — press Enter`); }
+  }
+  function restartTimer(){ clearInterval(dropTimer); dropTimer = setInterval(tick, Math.max(90, 600 - (level-1)*55)); }
+  function clearLines(){
+    let cleared = 0;
+    for (let y = ROWS-1; y >= 0; y--) if (grid[y].every(v => v)){ grid.splice(y,1); grid.unshift(Array(COLS).fill(0)); cleared++; y++; }
+    if (cleared){
+      score += [0,40,100,300,1200][cleared] * level; lines += cleared; level = 1 + ((lines/10)|0);
+      setScore(`Score: ${score} · Lines: ${lines} · Lvl: ${level}`); restartTimer();
+    }
+  }
+  function lock(){ cur.forEach((row,y) => row.forEach((v,x) => { if (v) grid[pos.y+y][pos.x+x] = v; })); clearLines(); spawn(); }
+  function tick(){ const np = { x: pos.x, y: pos.y+1 }; if (collide(cur, np)) lock(); else pos = np; draw(); }
+  function move(dx){ const np = { x: pos.x+dx, y: pos.y }; if (!collide(cur, np)) pos = np; draw(); }
+  function hardDrop(){ while (!collide(cur, { x: pos.x, y: pos.y+1 })) pos.y++; lock(); draw(); }
+  function tryRotate(){ const r = rotate(cur); for (const k of [0,-1,1,-2,2]) if (!collide(r, { x: pos.x+k, y: pos.y })){ cur = r; pos.x += k; break; } draw(); }
+  function draw(){
+    ctx.fillStyle = '#14131d'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const cell = (x,y,c) => { ctx.fillStyle = COLORS[c]; ctx.fillRect(x*S+1, y*S+1, S-2, S-2); };
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (grid[y][x]) cell(x,y,grid[y][x]);
+    if (cur) cur.forEach((row,y) => row.forEach((v,x) => { if (v) cell(pos.x+x, pos.y+y, v); }));
+  }
+  function start(){ grid = newGrid(); score = 0; lines = 0; level = 1; over = false; setScore('Score: 0 · Lines: 0 · Lvl: 1'); spawn(); draw(); restartTimer(); }
+  const key = e => {
+    if (over){ if (e.key === 'Enter') start(); return; }
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') move(-1);
+    else if (k === 'arrowright' || k === 'd') move(1);
+    else if (k === 'arrowdown' || k === 's') tick();
+    else if (k === 'arrowup' || k === 'w') tryRotate();
+    else if (k === ' ') hardDrop();
+    else return;
+    e.preventDefault();
+  };
+  window.addEventListener('keydown', key);
+  start();
+  cleanup = () => { clearInterval(dropTimer); window.removeEventListener('keydown', key); };
+};
+
+/* ---------- 18. Uno ---------- */
+GAMES.uno = function(){
+  const COLORS = ['red','yellow','green','blue'];
+  const HEX = { red:'#ff5470', yellow:'#ffd803', green:'#2cb67d', blue:'#00b4ff' };
+  const SYM = { skip:'Ø', reverse:'⇄', draw2:'+2', wild:'🌈', wild4:'+4' };
+  const label = c => SYM[c.kind] || c.kind;
+  const textColor = c => c.color === 'yellow' ? '#14131d' : '#fffffe';
+  function buildDeck(){
+    const d = [];
+    COLORS.forEach(c => {
+      d.push({ color:c, kind:'0' });
+      for (let n = 1; n <= 9; n++) d.push({ color:c, kind:''+n }, { color:c, kind:''+n });
+      ['skip','reverse','draw2'].forEach(k => d.push({ color:c, kind:k }, { color:c, kind:k }));
+    });
+    for (let i = 0; i < 4; i++) d.push({ color:'wild', kind:'wild' }, { color:'wild', kind:'wild4' });
+    return d;
+  }
+  const shuffle = a => { for (let i = a.length-1; i > 0; i--){ const j = (Math.random()*(i+1))|0; [a[i],a[j]] = [a[j],a[i]]; } return a; };
+  let deck, discard, you, cpu, curColor, turn, over, pendingCard;
+
+  const wrap = el('div', { className: 'uno-wrap' });
+  stage.append(wrap);
+
+  function reshuffle(){ if (deck.length) return; const top = discard.pop(); deck = shuffle(discard); discard = [top]; }
+  function drawCards(n, who){ const hand = who === 'you' ? you : cpu; for (let i = 0; i < n; i++){ reshuffle(); if (deck.length) hand.push(deck.pop()); } }
+  function playable(card){ if (card.color === 'wild') return true; const top = discard[discard.length-1]; return card.color === curColor || card.kind === top.kind; }
+  const skips = c => ['skip','reverse','draw2','wild4'].includes(c.kind);
+  function mostColor(hand){ const cnt = { red:0, yellow:0, green:0, blue:0 }; hand.forEach(c => { if (c.color !== 'wild') cnt[c.color]++; }); return COLORS.reduce((a,b) => cnt[b] > cnt[a] ? b : a, 'red'); }
+
+  function start(){
+    deck = shuffle(buildDeck()); you = []; cpu = []; over = false; pendingCard = null;
+    for (let i = 0; i < 7; i++){ you.push(deck.pop()); cpu.push(deck.pop()); }
+    let first = deck.pop(); while (first.color === 'wild'){ deck.unshift(first); first = deck.pop(); }
+    discard = [first]; curColor = first.color; turn = 'you';
+    setScore('Your turn — match the color or number.'); render();
+  }
+  function play(who, card){
+    const hand = who === 'you' ? you : cpu;
+    hand.splice(hand.indexOf(card), 1);
+    discard.push(card);
+    if (card.color !== 'wild') curColor = card.color;
+    if (card.kind === 'draw2') drawCards(2, who === 'you' ? 'cpu' : 'you');
+    if (card.kind === 'wild4') drawCards(4, who === 'you' ? 'cpu' : 'you');
+    after(who, card);
+  }
+  function after(who, card){
+    render();
+    if ((who === 'you' ? you : cpu).length === 0){ over = true; setScore(who === 'you' ? '🎉 You win the round!' : '🤖 CPU wins the round.'); render(); return; }
+    if (skips(card)){ if (who === 'cpu'){ turn = 'cpu'; setTimeout(cpuTurn, 750); } else { turn = 'you'; render(); } }
+    else if (who === 'you'){ turn = 'cpu'; setTimeout(cpuTurn, 750); }
+    else { turn = 'you'; setScore('Your turn.'); render(); }
+  }
+  function youPlay(card){
+    if (over || turn !== 'you' || !playable(card)) return;
+    if (card.color === 'wild'){ pendingCard = card; render(); return; }
+    play('you', card);
+  }
+  function chooseColor(c){ if (!pendingCard) return; curColor = c; const card = pendingCard; pendingCard = null; play('you', card); }
+  function youDraw(){
+    if (over || turn !== 'you' || pendingCard) return;
+    drawCards(1, 'you');
+    const last = you[you.length-1];
+    if (last && playable(last)){ setScore('You drew a playable card — play it or draw again.'); render(); }
+    else { setScore("You drew a card. CPU's turn."); turn = 'cpu'; render(); setTimeout(cpuTurn, 750); }
+  }
+  function cpuTurn(){
+    if (over || turn !== 'cpu') return;
+    let card = cpu.find(c => c.color !== 'wild' && playable(c)) || cpu.find(c => playable(c));
+    if (!card){ drawCards(1, 'cpu'); card = cpu[cpu.length-1]; if (!card || !playable(card)){ setScore('CPU drew a card. Your turn.'); turn = 'you'; render(); return; } }
+    if (card.color === 'wild') curColor = mostColor(cpu);
+    setScore(`CPU played ${label(card)}${card.color === 'wild' ? ' (' + curColor + ')' : ''}.`);
+    play('cpu', card);
+  }
+  function cardNode(card, clickable){
+    const isWild = card.color === 'wild';
+    const n = el('div', { className: 'uno-card' + (clickable ? ' play' : '') + (!clickable && turn === 'you' && !over ? ' dim' : '') });
+    n.style.background = isWild ? 'conic-gradient(#ff5470 0 25%,#ffd803 0 50%,#2cb67d 0 75%,#00b4ff 0)' : HEX[card.color];
+    n.style.color = textColor(card);
+    n.textContent = label(card);
+    if (clickable) n.addEventListener('click', () => youPlay(card));
+    return n;
+  }
+  function render(){
+    wrap.innerHTML = '';
+    const cpuRow = el('div', { className: 'uno-mini' });
+    for (let i = 0; i < cpu.length; i++) cpuRow.append(el('div', { className: 'uno-back' }));
+    wrap.append(el('div', { className: 'score', textContent: `🤖 CPU: ${cpu.length} cards` }), cpuRow);
+
+    const topNode = cardNode(discard[discard.length-1], false); topNode.classList.remove('dim');
+    const dot = el('span', { style: `display:inline-block;width:16px;height:16px;border-radius:50%;background:${HEX[curColor]};border:1px solid rgba(255,255,255,.3)` });
+    wrap.append(el('div', { className: 'uno-top' }, topNode, el('span', { className: 'score', textContent: 'Color:' }), dot));
+
+    if (pendingCard){
+      const pick = el('div', { className: 'uno-pick' });
+      COLORS.forEach(c => { const b = el('button', { style: `background:${HEX[c]}` }); b.addEventListener('click', () => chooseColor(c)); pick.append(b); });
+      wrap.append(el('div', { className: 'score', textContent: 'Pick a color:' }), pick);
+    }
+
+    const yourRow = el('div', { className: 'uno-hand' });
+    you.forEach(card => yourRow.append(cardNode(card, !over && turn === 'you' && !pendingCard && playable(card))));
+    wrap.append(el('div', { className: 'score', textContent: `🧑 Your hand: ${you.length}` }), yourRow);
+
+    const drawBtn = el('button', { className: 'btn', textContent: 'Draw card' });
+    drawBtn.disabled = over || turn !== 'you' || !!pendingCard;
+    drawBtn.addEventListener('click', youDraw);
+    const newBtn = el('button', { className: 'btn', textContent: 'New game' });
+    newBtn.addEventListener('click', start);
+    wrap.append(el('div', { className: 'uno-top' }, drawBtn, newBtn));
+  }
+  start();
+  cleanup = () => {};
+};
+
+/* ---------- 19. Flappy ---------- */
+GAMES.flappy = function(){
+  const W = 360, H = 420, GAP = 130, PW = 54, SPEED = 2.3;
+  const canvas = el('canvas', { className: 'arc-canvas', width: W, height: H });
+  const hint = el('p', { className: 'score', textContent: 'Click / space / ↑ to flap' });
+  stage.append(canvas, hint);
+  const ctx = canvas.getContext('2d');
+  let bird, pipes, score, best = 0, running, raf;
+  const randTop = () => 50 + Math.random() * (H - GAP - 130);
+  function reset(){ bird = { x: 84, y: H/2, v: 0, r: 11 }; pipes = [{ x: W, top: randTop() }]; score = 0; running = true; setScore('Score: 0'); }
+  function flap(){ if (!running){ reset(); return; } bird.v = -5.6; }
+  function die(){ if (!running) return; running = false; best = Math.max(best, score); setScore(`💥 Score: ${score} · Best: ${best} — click to retry`); }
+  function step(){
+    if (running){
+      bird.v += 0.34; bird.y += bird.v;
+      pipes.forEach(p => p.x -= SPEED);
+      if (pipes[pipes.length-1].x < W - 200) pipes.push({ x: W, top: randTop() });
+      pipes = pipes.filter(p => p.x > -PW);
+      for (const p of pipes){
+        if (bird.x+bird.r > p.x && bird.x-bird.r < p.x+PW && (bird.y-bird.r < p.top || bird.y+bird.r > p.top+GAP)) die();
+        if (!p.scored && p.x+PW < bird.x){ p.scored = true; score++; setScore(`Score: ${score} · Best: ${best}`); }
+      }
+      if (bird.y+bird.r > H || bird.y < 0) die();
+    }
+    ctx.fillStyle = '#14131d'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#2cb67d';
+    pipes.forEach(p => { ctx.fillRect(p.x, 0, PW, p.top); ctx.fillRect(p.x, p.top+GAP, PW, H-p.top-GAP); });
+    ctx.fillStyle = '#ffd803'; ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r, 0, 7); ctx.fill();
+    ctx.fillStyle = '#14131d'; ctx.beginPath(); ctx.arc(bird.x+4, bird.y-3, 2.5, 0, 7); ctx.fill();
+    raf = requestAnimationFrame(step);
+  }
+  const flapKey = e => { if (e.key === ' ' || e.key === 'ArrowUp'){ flap(); e.preventDefault(); } };
+  canvas.addEventListener('click', flap);
+  window.addEventListener('keydown', flapKey);
+  reset(); step();
+  cleanup = () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', flapKey); };
+};
+
+/* ---------- 20. Lights Out ---------- */
+GAMES.lightsout = function(){
+  const N = 5, idx = (r,c) => r*N + c;
+  let cells = Array(N*N).fill(false), moves = 0;
+  const grid = el('div', { className: 'lo-grid' });
+  const reset = el('button', { className: 'btn', textContent: 'New puzzle' });
+  stage.append(grid, reset);
+  const onCount = () => cells.filter(Boolean).length;
+  function flip(i){ const r = (i/N)|0, c = i%N; [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc]) => { if (rr>=0&&rr<N&&cc>=0&&cc<N) cells[idx(rr,cc)] = !cells[idx(rr,cc)]; }); }
+  function scramble(){ cells = Array(N*N).fill(false); for (let k = 0; k < 8; k++) flip((Math.random()*N*N)|0); if (cells.every(v => !v)) flip(0); moves = 0; draw(); setScore(`Lights on: ${onCount()} · Moves: 0`); }
+  function click(i){ flip(i); moves++; draw(); setScore(cells.every(v => !v) ? `🎉 Lights out in ${moves} moves!` : `Lights on: ${onCount()} · Moves: ${moves}`); }
+  function draw(){ grid.innerHTML = ''; cells.forEach((on,i) => { const d = el('div', { className: 'lo-cell' + (on ? ' on' : '') }); d.addEventListener('click', () => click(i)); grid.append(d); }); }
+  reset.addEventListener('click', scramble);
+  scramble();
+  cleanup = () => {};
+};
+
+/* ---------- 21. Tower of Hanoi ---------- */
+GAMES.hanoi = function(){
+  const N = 4;
+  const DISK_HEX = ['#ff5470','#ff8906','#ffd803','#2cb67d','#00ebc7','#7f5af0'];
+  let pegs, sel, moves;
+  const board = el('div', { className: 'hanoi-board' });
+  const reset = el('button', { className: 'btn', textContent: 'Restart' });
+  stage.append(board, reset);
+  function update(){ const min = Math.pow(2,N)-1; setScore(pegs[2].length === N ? `🎉 Solved in ${moves} moves! (min ${min})` : `Moves: ${moves} · Goal: stack all on the right (min ${min})`); }
+  function clickPeg(p){
+    if (pegs[2].length === N) return;
+    if (sel === null){ if (pegs[p].length) sel = p; draw(); return; }
+    if (sel === p){ sel = null; draw(); return; }
+    const from = pegs[sel], to = pegs[p], disk = from[from.length-1];
+    if (!to.length || to[to.length-1] > disk){ to.push(from.pop()); moves++; }
+    sel = null; update(); draw();
+  }
+  function draw(){
+    board.innerHTML = '';
+    pegs.forEach((peg,pi) => {
+      const col = el('div', { className: 'hanoi-peg' + (sel === pi ? ' sel' : '') });
+      peg.forEach(size => { const d = el('div', { className: 'hanoi-disk' }); d.style.width = (28 + size*20) + 'px'; d.style.background = DISK_HEX[size-1]; col.append(d); });
+      col.addEventListener('click', () => clickPeg(pi));
+      board.append(col);
+    });
+  }
+  function init(){ pegs = [[],[],[]]; for (let i = N; i >= 1; i--) pegs[0].push(i); sel = null; moves = 0; update(); draw(); }
+  reset.addEventListener('click', init);
+  init();
   cleanup = () => {};
 };
 </script>
