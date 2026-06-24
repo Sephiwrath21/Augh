@@ -57,7 +57,18 @@
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
   .emote:hover { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 12px 30px -12px var(--accent2); }
-  .emote .face { font-size: 3.2rem; line-height: 1; }
+  .emote .face { font-size: 3.2rem; line-height: 1; cursor: pointer; transition: transform .15s ease; }
+  .emote .face:hover { transform: scale(1.1); }
+  .emote .face.sixseven { animation: sixseven 0.75s ease; }
+  @keyframes sixseven {
+    0%   { transform: rotate(0)      translateY(0); }
+    14%  { transform: rotate(-24deg) translateY(-7px); }
+    32%  { transform: rotate(22deg)  translateY(3px); }
+    50%  { transform: rotate(-20deg) translateY(-5px); }
+    68%  { transform: rotate(18deg)  translateY(3px); }
+    85%  { transform: rotate(-10deg) translateY(-2px); }
+    100% { transform: rotate(0)      translateY(0); }
+  }
   .emote h3 { font-size: 1.05rem; }
   .emote iframe { border-radius: 12px; }
   .emote .cap { color: var(--muted); font-size: 0.82rem; max-width: 22ch; }
@@ -103,6 +114,15 @@
   <footer>Built for fun · served from the <code>Augh</code> repo</footer>
 
 <script>
+  // Make the hand emotes do the "6 7" tilt when clicked.
+  document.querySelectorAll('.emote .face').forEach(face => {
+    face.addEventListener('click', () => {
+      face.classList.remove('sixseven');
+      void face.offsetWidth;          // force reflow so the animation can replay
+      face.classList.add('sixseven');
+    });
+  });
+
   // Sprinkle a floating "6 7" wherever you click (just for fun — no sound, the buttons handle that).
   document.addEventListener('click', (e) => {
     if (e.target.closest('iframe') || e.target.closest('.back-link')) return;
