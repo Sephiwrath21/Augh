@@ -126,11 +126,59 @@
 <script>
   const fc = document.getElementById('fc');
 
+  let audioCtx;
+  function playHeaven() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+
+      // soft master with a gentle lowpass for an airy, celestial tone
+      const master = audioCtx.createGain();
+      master.gain.value = 0.85;
+      const air = audioCtx.createBiquadFilter();
+      air.type = 'lowpass'; air.frequency.value = 5000;
+      master.connect(air).connect(audioCtx.destination);
+
+      // angelic choir pad: a slowly-swelling, slightly-detuned major chord (C E G C)
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        [-4, 4].forEach(detune => {                 // two detuned voices per note = warmth
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = freq; osc.detune.value = detune;
+          const t = now + i * 0.04;
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.09, t + 0.18);   // slow swell
+          gain.gain.setValueAtTime(0.09, t + 0.9);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);  // long heavenly release
+          osc.connect(gain).connect(master);
+          osc.start(t); osc.stop(t + 1.9);
+        });
+      });
+
+      // ascending harp glissando (C major pentatonic up two octaves)
+      const harp = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 2093];
+      harp.forEach((freq, i) => {
+        const t = now + 0.05 + i * 0.06;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.12, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+        osc.connect(gain).connect(master);
+        osc.start(t); osc.stop(t + 0.65);
+      });
+    } catch (e) { /* audio not available — fail silently */ }
+  }
+
   function nod() {
     // restart the animation even on rapid repeat clicks
     fc.classList.remove('nod');
     void fc.offsetWidth; // force reflow
     fc.classList.add('nod');
+    playHeaven();
   }
 
   fc.addEventListener('click', nod);
